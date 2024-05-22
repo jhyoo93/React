@@ -36,3 +36,9 @@
     transform: rotate(360deg);
   }
 }
+
+.todo-item{
+  width: 300;
+  height: 50;
+  border: 1px solid white;
+}
