@@ -1,0 +1,14 @@
+.hand {
+  width: 207px;
+  height: 207px;
+  text-align: center;
+  border: none;
+  background-image: url('./assets/yellow.svg');
+  background-color: transparent;
+  background-repeat: no-repeat;
+  background-position: 50%;
+  background-size: contain;
+}
+.hand.winner {
+  background-image: url('./assets/yellow-win.svg');
+}
