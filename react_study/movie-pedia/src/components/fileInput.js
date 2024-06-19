@@ -1,6 +1,8 @@
-import { useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 
-function FileInput({name, value, onChange}) {
+function FileInput({ name, value, initialPreview, onChange }) {
+    const [preview, setPreview] = useState(initialPreview);
+
     const inputRef = useRef();
 
     const handleChange = (e) => {
@@ -8,7 +10,34 @@ function FileInput({name, value, onChange}) {
         onChange(name, nextValue);
     };    
 
-    return <input type="file" onChange={handleChange} ref={inputRef}/>;
+    const handleClearClick = () => {
+      const inputNode = inputRef.current;
+      if (!inputNode) return;
+  
+      inputNode.value = '';
+      onChange(name, null);
+    }; 
+
+    useEffect(() => {
+      if (!value) return;
+
+      // 메모리를 할당하고 파일에 해당하는 주소를 만들어줌.
+      const nextPreview = URL.createObjectURL(value); 
+      setPreview(nextPreview);
+
+      return () => {
+        setPreview(initialPreview);
+        URL.revokeObjectURL(nextPreview);
+      };
+    }, [value, initialPreview]);
+
+    return (
+      <div>
+        <img src={preview} alt="이미지 미리보기"/>
+        <input type="file" accept="image/png, image/jpeg" onChange={handleChange} ref={inputRef}/>
+        { value && <button onClick={handleClearClick}>X</button> }
+      </div>
+    );
 }
 
 export default FileInput;
