@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { createReview, getReviews, updateReview } from "../api";
+import { createReview, deleteReview, getReviews, updateReview } from "../api";
 import ReviewList from "./ReviewList";
 import ReviewForm from "./ReviewFrom";
 
@@ -18,10 +18,12 @@ function App() {
   const handleNewestClck = () => setOrder("createdAt");
   const handleClck = () => setOrder("rating");
 
-  const handleDelete = (id) => {
-    const nextItems = items.filter((item) => item.id !== id);
+  const handleDelete = async (id) => {
+    const result = await deleteReview(id);
+    if(!result) return;
+
     // 리스트 재랜더링
-    setItems(nextItems);
+    setItems((prevItems) => prevItems.filter((item) => item.id !== id));
   };
 
   const handleLoad = async (options) => {
