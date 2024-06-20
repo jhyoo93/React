@@ -1,7 +1,10 @@
-import { useEffect, useState } from "react";
-import { createReview, deleteReview, getReviews, updateReview } from "../api";
+import { useCallback, useEffect, useState } from "react";
 import ReviewList from "./ReviewList";
 import ReviewForm from "./ReviewFrom";
+import { createReview, deleteReview, getReviews, updateReview } from "../api";
+import useAsync from "./hooks/useAsync";
+import { LocaleProvider } from "../contexts/LocaleContext";
+import LocalSelect from "./LocaleSelect";
 
 const LIMIT = 6;
 
@@ -10,8 +13,7 @@ function App() {
   const [items, setItems] = useState([]);
   const [offset, setOffset] = useState(0);
   const [hasNext, setHasNext] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-  const [loadingError, setLoadingError] = useState(null);
+  const [isLoading, loadingError, getReviewAsync] = useAsync(getReviews);
 
   const sortedItems = items.sort((a, b) => b[order] - a[order]);
 
@@ -26,19 +28,10 @@ function App() {
     setItems((prevItems) => prevItems.filter((item) => item.id !== id));
   };
 
-  const handleLoad = async (options) => {
-    let result;
-    try {
-      setIsLoading(true);
-      setLoadingError(null);
-      result = await getReviews(options);
-    } catch (error) {
-      setLoadingError(error);
-      return;
-    } finally {
-      setIsLoading(false);
-    }
-
+  const handleLoad = useCallback(async (options) => {
+    let result = await getReviewAsync(options);
+    if (!result) return;
+    
     const { reviews, paging } = result;
     if (options.offset === 0) {
       setItems(reviews);
@@ -47,7 +40,7 @@ function App() {
     }
     setOffset(options.offset + reviews.length);
     setHasNext(paging.hasNext);
-  };
+  }, [getReviewAsync]);
 
   // callback함수
   // 맨처음 랜더링이 끝나면 콜백함수 실행 그후 디펜던시 리스트를 비교해서 기억한 값이랑 다른경우에만 콜백이 실행됨.
@@ -55,7 +48,7 @@ function App() {
   useEffect(() => {
     // 처음 App 컴포넌트가실행되면 handleLoad 함수를 호출하여 order, offset, limit 값으로 request 전달
     handleLoad({ order, offset: 0, limit: LIMIT });
-  }, [order]);
+  }, [order, handleLoad]);
 
   // 더보기
   const handleLoadMore = () => {
@@ -80,8 +73,11 @@ function App() {
   };
 
   return (
-    //ReviewList.js 컴포넌트 랜더링
+    // LocalContext로 전역 데이터를 설정
+    <LocaleProvider defaultValue={'ko'}>
+    {/*컴포넌트 랜더링 */}
     <div>
+      <LocalSelect/>
       <div>
         <button onClick={handleNewestClck}>최신순</button>
         <button onClick={handleClck}>베스트</button>
@@ -103,6 +99,7 @@ function App() {
       )}
       {loadingError?.message && <span>{loadingError.message}</span>}
     </div>
+    </LocaleProvider>
   );
 }
 
