@@ -1,23 +1,22 @@
-import { useState } from "react";
+import { useState } from 'react';
+import Rating from './Rating';
 import './RatingInput.css';
-import Rating from "./Rating";
 
 function RatingInput({ name, value, onChange }) {
-
-  const [rating, setRating] = useState(value); //마오스 호버시 미리 보여줄 별점 값.
+  const [rating, setRating] = useState(value);
 
   const handleSelect = (nextValue) => onChange(name, nextValue);
 
   const handleMouseOut = () => setRating(value);
 
-  return ( 
+  return (
     <Rating
       className="RatingInput"
-      value={rating} 
-      onSelect={handleSelect} 
+      value={rating}
+      onSelect={handleSelect}
       onHover={setRating}
-      onMouseOut={handleMouseOut} 
-    /> 
+      onMouseOut={handleMouseOut}
+    />
   );
 }
 

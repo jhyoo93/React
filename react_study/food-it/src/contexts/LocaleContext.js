@@ -2,7 +2,7 @@ import { createContext, useContext, useState } from 'react';
 
 const LocaleContext = createContext();
 
-export function LocaleProvider({ defaultValue = 'ko', children }) {
+export function LocaleProvider({ defaultValue, children }) {
   const [locale, setLocale] = useState(defaultValue);
 
   return (

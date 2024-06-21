@@ -1,6 +1,10 @@
 import ReactDOM from 'react-dom';
 import App from './components/App';
+import { LocaleProvider } from './contexts/LocaleContext';
 
 ReactDOM.render(
-    <App />, document.getElementById('root') // id 값을가져와 index.html에 랜더링
+  <LocaleProvider defaultValue="ko">
+    <App />
+  </LocaleProvider>,
+  document.getElementById('root'),
 );

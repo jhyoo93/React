@@ -1,17 +1,16 @@
-import { useState } from "react";
-import { useLocale } from "../contexts/LocaleContext";
-import Rating from "./Rating";
-import ReviewForm from "./ReviewFrom";
-import "./ReviewList.css";
+import { useState } from 'react';
+import useTranslate from '../hooks/useTranslate';
+import Rating from './Rating';
+import ReviewForm from './ReviewForm';
+import './ReviewList.css';
 
-// 날짜 포맷 함수
 function formatDate(value) {
   const date = new Date(value);
-  return `${date.getFullYear()}. ${date.getMonth()}. ${date.getDay()}`;
+  return `${date.getFullYear()}. ${date.getMonth() + 1}. ${date.getDate()}.`;
 }
 
 function ReviewListItem({ item, onDelete, onEdit }) {
-  const locale = useLocale();
+  const t = useTranslate();
 
   const handleDeleteClick = () => {
     onDelete(item.id);
@@ -22,36 +21,45 @@ function ReviewListItem({ item, onDelete, onEdit }) {
   };
 
   return (
-    <div className="ReviewListItem">
+    <div className="ReviewListItem" key={item.id}>
       <img className="ReviewListItem-img" src={item.imgUrl} alt={item.title} />
-      <div>
-        <h1>{item.title}</h1>
-        <Rating value={item.rating} />
-        <p>{formatDate(item.createdAt)}</p>
-        <p>{item.content}</p>
-        <p>현재 언어: {locale}</p>
-        <button onClick={handleDeleteClick}>삭제</button>
-        <button onClick={handleEditClick}>수정</button>
+      <div className="ReviewListItem-rows">
+        <h1 className="ReviewListItem-title">{item.title}</h1>
+        <Rating className="ReviewListItem-rating" value={item.rating} />
+        <p className="ReviewListItem-date">{formatDate(item.createdAt)}</p>
+        <p className="ReviewListItem-content">{item.content}</p>
+        <div className="ReviewListItem-buttons">
+          <button
+            className="ReviewListItem-edit-button"
+            onClick={handleEditClick}
+          >
+            {t('edit button')}
+          </button>
+          <button
+            className="ReviewListItem-delete-button"
+            onClick={handleDeleteClick}
+          >
+            {t('delete button')}
+          </button>
+        </div>
       </div>
     </div>
   );
 }
 
-function ReviewList({ items, onDelete, onUpdate, onUpdateSuccess }) {
+function ReviewList({ items, onUpdate, onUpdateSuccess, onDelete }) {
   const [editingId, setEditingId] = useState(null);
 
   const handleCancel = () => setEditingId(null);
 
   return (
-    <ul>
+    <ul className="ReviewList">
       {items.map((item) => {
-        // ul 태그 리스트 선언
-        // 게시물 수정
         if (item.id === editingId) {
           const { id, imgUrl, title, rating, content } = item;
           const initialValues = { title, rating, content, imgFile: null };
 
-          const handleSubmit = (FormData) => onUpdate(id, FormData);
+          const handleSubmit = (formData) => onUpdate(id, formData);
 
           const handleSubmitSuccess = (review) => {
             onUpdateSuccess(review);
@@ -59,20 +67,18 @@ function ReviewList({ items, onDelete, onUpdate, onUpdateSuccess }) {
           };
 
           return (
-            // li 태그 ReviewListItem 컴포넌트 출력
             <li key={item.id}>
               <ReviewForm
                 initialValues={initialValues}
-                onCancel={handleCancel}
                 initialPreview={imgUrl}
                 onSubmit={handleSubmit}
                 onSubmitSuccess={handleSubmitSuccess}
+                onCancel={handleCancel}
               />
             </li>
           );
         }
         return (
-          // li 태그 ReviewListItem 컴포넌트 출력
           <li key={item.id}>
             <ReviewListItem
               item={item}

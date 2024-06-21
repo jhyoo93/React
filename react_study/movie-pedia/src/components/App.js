@@ -1,66 +1,73 @@
-import { useCallback, useEffect, useState } from "react";
-import ReviewList from "./ReviewList";
-import ReviewForm from "./ReviewFrom";
-import { createReview, deleteReview, getReviews, updateReview } from "../api";
-import useAsync from "./hooks/useAsync";
-import { LocaleProvider } from "../contexts/LocaleContext";
-import LocalSelect from "./LocaleSelect";
+import { useCallback, useEffect, useState } from 'react';
+import ReviewList from './ReviewList';
+import ReviewForm from './ReviewForm';
+import { createReview, deleteReview, getReviews, updateReview } from '../api';
+import useAsync from '../hooks/useAsync';
+import LocaleSelect from './LocaleSelect';
+import './App.css';
+import logoImg from '../assets/logo.png';
+import ticketImg from '../assets/ticket.png';
+import useTranslate from '../hooks/useTranslate';
 
 const LIMIT = 6;
 
+function AppSortButton({ selected, children, onClick }) {
+  return (
+    <button
+      disabled={selected}
+      className={`AppSortButton ${selected ? 'selected' : ''}`}
+      onClick={onClick}
+    >
+      {children}
+    </button>
+  );
+}
+
 function App() {
-  const [order, setOrder] = useState("createdAt");
-  const [items, setItems] = useState([]);
+  const t = useTranslate();
+  const [order, setOrder] = useState('createdAt');
   const [offset, setOffset] = useState(0);
   const [hasNext, setHasNext] = useState(false);
-  const [isLoading, loadingError, getReviewAsync] = useAsync(getReviews);
-
+  const [isLoading, loadingError, getReviewsAsync] = useAsync(getReviews);
+  const [items, setItems] = useState([]);
   const sortedItems = items.sort((a, b) => b[order] - a[order]);
 
-  const handleNewestClck = () => setOrder("createdAt");
-  const handleClck = () => setOrder("rating");
+  const handleNewestClick = () => setOrder('createdAt');
+
+  const handleBestClick = () => setOrder('rating');
 
   const handleDelete = async (id) => {
     const result = await deleteReview(id);
-    if(!result) return;
+    if (!result) return;
 
-    // 리스트 재랜더링
     setItems((prevItems) => prevItems.filter((item) => item.id !== id));
   };
 
-  const handleLoad = useCallback(async (options) => {
-    let result = await getReviewAsync(options);
-    if (!result) return;
-    
-    const { reviews, paging } = result;
-    if (options.offset === 0) {
-      setItems(reviews);
-    } else {
-      setItems((prevItems) => [...prevItems, ...reviews]);
-    }
-    setOffset(options.offset + reviews.length);
-    setHasNext(paging.hasNext);
-  }, [getReviewAsync]);
+  const handleLoad = useCallback(
+    async (options) => {
+      const result = await getReviewsAsync(options);
+      if (!result) return;
 
-  // callback함수
-  // 맨처음 랜더링이 끝나면 콜백함수 실행 그후 디펜던시 리스트를 비교해서 기억한 값이랑 다른경우에만 콜백이 실행됨.
-  // 데이터 출력시 무한루프가 발생함으로 useEffect함수를 사용해야함
-  useEffect(() => {
-    // 처음 App 컴포넌트가실행되면 handleLoad 함수를 호출하여 order, offset, limit 값으로 request 전달
-    handleLoad({ order, offset: 0, limit: LIMIT });
-  }, [order, handleLoad]);
+      const { paging, reviews } = result;
+      if (options.offset === 0) {
+        setItems(reviews);
+      } else {
+        setItems((prevItems) => [...prevItems, ...reviews]);
+      }
+      setOffset(options.offset + options.limit);
+      setHasNext(paging.hasNext);
+    },
+    [getReviewsAsync]
+  );
 
-  // 더보기
-  const handleLoadMore = () => {
-    handleLoad({ order, offset, limit: LIMIT });
+  const handleLoadMore = async () => {
+    await handleLoad({ order, offset, limit: LIMIT });
   };
 
-  // 등록
   const handleCreateSuccess = (review) => {
     setItems((prevItems) => [review, ...prevItems]);
   };
 
-  // 수정
   const handleUpdateSuccess = (review) => {
     setItems((prevItems) => {
       const splitIdx = prevItems.findIndex((item) => item.id === review.id);
@@ -72,34 +79,71 @@ function App() {
     });
   };
 
+  useEffect(() => {
+    handleLoad({ order, offset: 0, limit: LIMIT });
+  }, [order, handleLoad]);
+
   return (
-    // LocalContext로 전역 데이터를 설정
-    <LocaleProvider defaultValue={'ko'}>
-    {/*컴포넌트 랜더링 */}
-    <div>
-      <LocalSelect/>
-      <div>
-        <button onClick={handleNewestClck}>최신순</button>
-        <button onClick={handleClck}>베스트</button>
+    <div className="App">
+      <nav className="App-nav">
+        <div className="App-nav-container">
+          <img className="App-logo" src={logoImg} alt="MOVIDE PEDIA" />
+          <LocaleSelect />
+        </div>
+      </nav>
+      <div className="App-container">
+        <div
+          className="App-ReviewForm"
+          style={{
+            backgroundImage: `url("${ticketImg}")`,
+          }}
+        >
+          <ReviewForm
+            onSubmit={createReview}
+            onSubmitSuccess={handleCreateSuccess}
+          />
+        </div>
+        <div className="App-sorts">
+          <AppSortButton
+            selected={order === 'createdAt'}
+            onClick={handleNewestClick}
+          >
+            {t('newest')}
+          </AppSortButton>
+          <AppSortButton
+            selected={order === 'rating'}
+            onClick={handleBestClick}
+          >
+            {t('best')}
+          </AppSortButton>
+        </div>
+        <div className="App-ReviewList">
+          <ReviewList
+            items={sortedItems}
+            onDelete={handleDelete}
+            onUpdate={updateReview}
+            onUpdateSuccess={handleUpdateSuccess}
+          />
+          {hasNext ? (
+            <button
+              className="App-load-more-button"
+              disabled={isLoading}
+              onClick={handleLoadMore}
+            >
+              {t('load more')}
+            </button>
+          ) : (
+            <div className="App-load-more-button" />
+          )}
+          {loadingError?.message && <span>{loadingError.message}</span>}
+        </div>
       </div>
-      <ReviewForm
-        onSubmit={createReview}
-        onSubmitSuccess={handleCreateSuccess}
-      />
-      <ReviewList
-        items={sortedItems}
-        onDelete={handleDelete}
-        onUpdate={updateReview}
-        onUpdateSuccess={handleUpdateSuccess}
-      />
-      {hasNext && (
-        <button disabled={isLoading} onClick={handleLoadMore}>
-          더보기
-        </button>
-      )}
-      {loadingError?.message && <span>{loadingError.message}</span>}
+      <footer className="App-footer">
+        <div className="App-footer-container">
+          {t('terms of service')} | {t('privacy policy')}
+        </div>
+      </footer>
     </div>
-    </LocaleProvider>
   );
 }
 
