@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import useAsync from '../hooks/useAsync';
 import useTranslate from '../hooks/useTranslate';
-import FileInput from './FileInput';
+import FileInput from './fileInput';
 import RatingInput from './RatingInput';
 import './ReviewForm.css';
 
